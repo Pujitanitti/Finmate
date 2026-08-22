@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-test-build:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: finmate
+          POSTGRES_PASSWORD: finmate
+          POSTGRES_DB: finmate
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U finmate -d finmate"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: "postgresql://finmate:finmate@localhost:5432/finmate?schema=public"
+      AUTH_SECRET: "ci-only-secret-not-used-in-production"
+      SESSION_COOKIE_NAME: "finmate_session"
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+      NEXT_PUBLIC_DEFAULT_CURRENCY: "INR"
+      NEXT_PUBLIC_DEMO_MODE_ENABLED: "true"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Apply database migrations
+        run: npx prisma migrate deploy
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Run integration tests (real Postgres)
+        run: npm run test:integration
+
+      - name: Build
+        run: npm run build

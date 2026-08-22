@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: finmate-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: finmate
+      POSTGRES_PASSWORD: finmate
+      POSTGRES_DB: finmate
+    ports:
+      - "5432:5432"
+    volumes:
+      - finmate_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finmate -d finmate"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  finmate_pgdata:

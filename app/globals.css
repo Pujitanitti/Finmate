@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Restored to the exact FinMate palette from before the blue-first
+       redesign attempt — navy primary, near-white background. The
+       structural improvements (dark sidebar, gradient login backdrop, card
+       glow) are kept, but now driven by these original color values instead
+       of the vibrant blue that was introduced and then reverted. */
+    --background: 0 0% 100%;
+    --foreground: 222 20% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 20% 12%;
+
+    --border: 220 14% 91%;
+
+    --muted: 220 20% 97%;
+    --muted-foreground: 220 9% 46%;
+
+    /* FinMate brand: navy primary — the original, correct brand color. */
+    /* FinMate brand: navy primary — restored to the exact original value
+       used in finmate-final (before any of the later color experiments). */
+    --primary: 222 47% 20%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Same navy as --primary — this token exists so the sidebar/high-
+       emphasis surfaces added in the interactive redesign have a color to
+       reference, but it is NOT a new color: it's the exact original navy
+       brand color, just given its own variable name for that purpose. */
+    --primary-dark: 222 47% 20%;
+    --primary-dark-foreground: 0 0% 100%;
+
+    /* Reuses the exact original --muted value for the same reason — a
+       named token for the gradient/tint backgrounds added in the
+       interactive redesign, without introducing any new color. */
+    --surface-tint: 220 20% 97%;
+
+    --success: 152 60% 36%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 24 10% 10%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 222 30% 7%;
+    --foreground: 210 20% 96%;
+
+    --card: 222 26% 10%;
+    --card-foreground: 210 20% 96%;
+
+    --border: 222 16% 20%;
+
+    --muted: 222 20% 14%;
+    --muted-foreground: 218 11% 65%;
+
+    --primary: 210 90% 62%;
+    --primary-foreground: 222 30% 10%;
+
+    /* Original dark-mode background/card tone, reused as the sidebar's
+       "darker than content" surface in dark mode. */
+    --primary-dark: 222 30% 7%;
+    --primary-dark-foreground: 210 20% 96%;
+
+    --surface-tint: 222 20% 14%;
+
+    --success: 152 55% 45%;
+    --success-foreground: 222 30% 7%;
+
+    --warning: 38 92% 55%;
+    --warning-foreground: 24 10% 10%;
+
+    --destructive: 0 70% 58%;
+    --destructive-foreground: 222 30% 7%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+@layer utilities {
+  /* Soft glow used on hover for interactive cards — now uses the restored
+     navy primary, not the reverted vibrant blue. */
+  .shadow-glow-primary {
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.15), 0 8px 24px -8px hsl(var(--primary) / 0.25);
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "name": "finmate",
+  "version": "0.1.0",
+  "private": true,
+  "description": "FinMate — a zero-cost, full-stack personal finance management platform.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:e2e": "playwright test",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:studio": "prisma studio",
+    "postinstall": "prisma generate"
+  },
+  "dependencies": {
+    "next": "15.1.0",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "@prisma/client": "5.22.0",
+    "bcryptjs": "2.4.3",
+    "zod": "3.24.1",
+    "react-hook-form": "7.54.2",
+    "@hookform/resolvers": "3.9.1",
+    "recharts": "2.15.0",
+    "lucide-react": "0.469.0",
+    "framer-motion": "11.15.0",
+    "clsx": "2.1.1",
+    "tailwind-merge": "2.6.0",
+    "date-fns": "4.1.0",
+    "jose": "5.9.6"
+  },
+  "devDependencies": {
+    "typescript": "5.7.2",
+    "@types/node": "22.10.5",
+    "@types/react": "19.0.2",
+    "@types/react-dom": "19.0.2",
+    "@types/bcryptjs": "2.4.6",
+    "prisma": "5.22.0",
+    "tailwindcss": "3.4.17",
+    "postcss": "8.4.49",
+    "autoprefixer": "10.4.20",
+    "eslint": "9.17.0",
+    "eslint-config-next": "15.1.0",
+    "prettier": "3.4.2",
+    "prettier-plugin-tailwindcss": "0.6.9",
+    "vitest": "2.1.8",
+    "@vitejs/plugin-react": "4.3.4",
+    "@testing-library/react": "16.1.0",
+    "@testing-library/jest-dom": "6.6.3",
+    "jsdom": "25.0.1",
+    "@playwright/test": "1.49.1",
+    "tsx": "4.19.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  }
+}

@@ -1,0 +1,287 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────────
+
+enum AccountType {
+  BANK
+  SAVINGS
+  CASH
+  CREDIT_CARD
+  INVESTMENT
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+}
+
+enum BudgetStatus {
+  HEALTHY
+  WARNING
+  EXCEEDED
+}
+
+enum RecurringFrequency {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum RecurringStatus {
+  ACTIVE
+  PAUSED
+  CANCELLED
+}
+
+enum NotificationType {
+  BUDGET_WARNING
+  BUDGET_EXCEEDED
+  GOAL_MILESTONE
+  RECURRING_UPCOMING
+  MONTHLY_SUMMARY
+  GENERAL
+}
+
+enum InsightSeverity {
+  POSITIVE
+  INFORMATIONAL
+  WARNING
+}
+
+// ─── Core models ────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  currency     String   @default("INR")
+  monthlyIncome Decimal? @db.Decimal(14, 2)
+  onboarded    Boolean  @default(false)
+  isDemo       Boolean  @default(false)
+  // Bumped on logout-everywhere and on password change; embedded in every
+  // issued JWT and checked on each request. Bumping this instantly
+  // invalidates every previously-issued session token without needing a
+  // server-side session store — see lib/auth/session.ts and
+  // docs/SECURITY.md's Session/token handling section.
+  sessionVersion Int    @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  accounts           Account[]
+  transactions       Transaction[]
+  budgets            Budget[]
+  goals              Goal[]
+  recurringPayments  RecurringPayment[]
+  notifications      Notification[]
+  insights           Insight[]
+  categories         Category[]
+  tags               Tag[]
+  preference         UserPreference?
+
+  @@index([email])
+}
+
+model UserPreference {
+  id                  String  @id @default(cuid())
+  userId              String  @unique
+  user                User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  theme               String  @default("system") // light | dark | system
+  currency            String  @default("INR")
+  notifyBudgetWarning Boolean @default(true)
+  notifyGoalMilestone Boolean @default(true)
+  notifyRecurring     Boolean @default(true)
+  notifyMonthlySummary Boolean @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model Account {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  type      AccountType
+  balance   Decimal     @db.Decimal(14, 2) @default(0)
+  isDemo    Boolean     @default(false)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  transactions Transaction[]
+
+  @@index([userId])
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  icon      String?
+  color     String?
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  transactions Transaction[]
+  budgetItems  BudgetItem[]
+  recurringPayments RecurringPayment[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model Tag {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name   String
+
+  transactionTags TransactionTag[]
+
+  @@unique([userId, name])
+}
+
+model Transaction {
+  id         String          @id @default(cuid())
+  userId     String
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId  String
+  account    Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  categoryId String?
+  category   Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  merchant   String
+  amount     Decimal         @db.Decimal(14, 2)
+  type       TransactionType
+  notes      String?
+  date       DateTime
+  isDemo     Boolean         @default(false)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  tags TransactionTag[]
+
+  @@index([userId, date])
+  @@index([userId, categoryId])
+  @@index([accountId])
+}
+
+model TransactionTag {
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  tagId         String
+  tag           Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([transactionId, tagId])
+}
+
+model Budget {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month     Int // 1-12
+  year      Int
+  isDemo    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items BudgetItem[]
+
+  @@unique([userId, month, year])
+  @@index([userId])
+}
+
+model BudgetItem {
+  id         String       @id @default(cuid())
+  budgetId   String
+  budget     Budget       @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  limit      Decimal      @db.Decimal(14, 2)
+  status     BudgetStatus @default(HEALTHY)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@unique([budgetId, categoryId])
+}
+
+model Goal {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  targetAmount  Decimal  @db.Decimal(14, 2)
+  currentAmount Decimal  @db.Decimal(14, 2) @default(0)
+  targetDate    DateTime?
+  isDemo        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  contributions GoalContribution[]
+
+  @@index([userId])
+}
+
+model GoalContribution {
+  id        String   @id @default(cuid())
+  goalId    String
+  goal      Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  amount    Decimal  @db.Decimal(14, 2)
+  note      String?
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@index([goalId])
+}
+
+model RecurringPayment {
+  id           String              @id @default(cuid())
+  userId       String
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  amount       Decimal             @db.Decimal(14, 2)
+  frequency    RecurringFrequency
+  categoryId   String?
+  category     Category?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  nextDueDate  DateTime
+  status       RecurringStatus     @default(ACTIVE)
+  isDemo       Boolean             @default(false)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@index([userId])
+  @@index([categoryId])
+}
+
+model Notification {
+  id        String            @id @default(cuid())
+  userId    String
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean           @default(false)
+  createdAt DateTime          @default(now())
+
+  @@index([userId, isRead])
+}
+
+model Insight {
+  id        String          @id @default(cuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  severity  InsightSeverity
+  message   String
+  metric    String? // machine-readable key, e.g. "food_spend_increase"
+  createdAt DateTime        @default(now())
+
+  @@index([userId, createdAt])
+}
